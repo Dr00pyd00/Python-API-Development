@@ -8,6 +8,10 @@ from fastapi import FastAPI, Body, Response, status, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from random import randrange
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+
 app = FastAPI()
 
 
@@ -15,13 +19,37 @@ class Post(BaseModel):
     title: str
     content: str
     published: bool = True  # default
-    rating: Optional[int] = None
+
+print('ca marche...')
+
+try:
+    conn = psycopg2.connect(host='172.21.64.1',  # machine ou est la data     
+                             database='fastapi', # nom de la db
+                               user='postgres',         ## identifiants 
+                                 password='kottak',
+                                   cursor_factory=RealDictCursor # ajouter pour avoir le hearder des tables!
+                                     )
+    cursor = conn.cursor()
+    print("database connection was successfull!!!")
+
+except Exception as error:
+    print('connexion database failed ...')
+    print('error: ', error)
+
+
+
+
+
 
 
 # variable pour sotcker les datas:
 my_posts = [{'title':'title of post 1', 'content':'content of post 1', 'id':1},
             {'title':'favorite food','content':'I like pizza', 'id':2}]
 
+
+
+
+# fonction de recherche:
 
 def find_post(id):
     for post in my_posts:
@@ -32,8 +60,10 @@ def find_index_post(id):
     for index, content in enumerate(my_posts):
         if content['id'] == id:
             return index
+        
 
-
+#======================#
+#==== ROUTES ==========#
 
 @app.get('/')
 def root():
@@ -54,9 +84,6 @@ def create_posts(post: Post):
     print(post_dict)
     print(my_posts)
     return {'data': post_dict}
-# we want title: str / content: str
-
-
 
 
 # retrieve a post :
@@ -85,9 +112,8 @@ def delete_post(id:int):
 
 
     # update qq chose :
-
 @app.put('/posts/{id}')
-def update_post_kappa(id:int, post: Post):
+def update_post(id:int, post: Post):
 
     post_index = find_index_post(id)
     if post_index is None:
